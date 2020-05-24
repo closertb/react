@@ -330,6 +330,7 @@ function FiberNode(
 //    is faster.
 // 5) It should be easy to port this to a C struct and keep a C implementation
 //    compatible.
+// NOTE: 入参和Fiber 构造函数一样，只是Fiber类的快速构造方法；
 const createFiber = function(
   tag: WorkTag,
   pendingProps: mixed,
@@ -354,8 +355,10 @@ export function isSimpleFunctionComponent(type: any) {
 }
 
 export function resolveLazyComponentTag(Component: Function): WorkTag {
+  // NOTE: 函数或类组件
   if (typeof Component === 'function') {
     return shouldConstruct(Component) ? ClassComponent : FunctionComponent;
+  // NOTE: ref 或 memo 包裹过的高阶组件
   } else if (Component !== undefined && Component !== null) {
     const $$typeof = Component.$$typeof;
     if ($$typeof === REACT_FORWARD_REF_TYPE) {
@@ -369,6 +372,7 @@ export function resolveLazyComponentTag(Component: Function): WorkTag {
 }
 
 // This is used to create an alternate fiber to do work on.
+// 更新过程中生成新的vdom
 export function createWorkInProgress(
   current: Fiber,
   pendingProps: any,
@@ -398,8 +402,9 @@ export function createWorkInProgress(
       workInProgress._debugOwner = current._debugOwner;
       workInProgress._debugHookTypes = current._debugHookTypes;
     }
-
+    // NOTE: 传说中的双缓冲设计
     workInProgress.alternate = current;
+    // 这里应该是被打断后，下一次遍历就workInProgress !== null，而是直接走下面一个逻辑了
     current.alternate = workInProgress;
   } else {
     workInProgress.pendingProps = pendingProps;

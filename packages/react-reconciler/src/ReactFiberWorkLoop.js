@@ -887,7 +887,8 @@ function renderRoot(
       // event time. The next update will compute a new event time.
       currentEventTime = NoWork;
     }
-
+    // NOTE: 这个写法还是很新鲜，workLoop 有可能自己执行完，那这个do while循环终止；
+    // 但更多时候是workLoop自己被打断而被迫执行完，导致这个do while循环终止
     do {
       try {
         if (isSync) {
@@ -1214,6 +1215,7 @@ function workLoopSync() {
   }
 }
 
+// NOTE: fiber Reconciler 主循环；
 function workLoop() {
   // Perform work until Scheduler asks us to yield
   while (workInProgress !== null && !shouldYield()) {
@@ -1225,12 +1227,14 @@ function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
   // The current, flushed, state of this fiber is the alternate. Ideally
   // nothing should rely on this, but relying on it here means that we don't
   // need an additional field on the work in progress.
+  // 当前正在运行的fiber节点，是下一个更新的备用状态。复用这个节点的一些属性，意为能节约一些性能
   const current = unitOfWork.alternate;
 
   startWorkTimer(unitOfWork);
   setCurrentDebugFiberInDEV(unitOfWork);
 
   let next;
+  // 性能测试相关的
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
     next = beginWork(current, unitOfWork, renderExpirationTime);
@@ -1240,9 +1244,11 @@ function performUnitOfWork(unitOfWork: Fiber): Fiber | null {
   }
 
   resetCurrentDebugFiberInDEV();
+  // 将props更新为最新的
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
+    // reconciliation 阶段结束，进入commit阶段
     next = completeUnitOfWork(unitOfWork);
   }
 

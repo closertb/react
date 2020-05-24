@@ -91,7 +91,7 @@ if (__DEV__) {
     if (callback === null || typeof callback === 'function') {
       return;
     }
-    const key = `${callerName}_${(callback: any)}`;
+    // const key = `${callerName}_${(callback: any)}`;
     if (!didWarnOnInvalidCallback.has(key)) {
       didWarnOnInvalidCallback.add(key);
       warningWithoutStack(
@@ -194,12 +194,6 @@ const classComponentUpdater = {
 
     const update = createUpdate(expirationTime, suspenseConfig);
     update.payload = payload;
-    if (callback !== undefined && callback !== null) {
-      if (__DEV__) {
-        warnOnInvalidCallback(callback, 'setState');
-      }
-      update.callback = callback;
-    }
 
     if (revertPassiveEffectsChange) {
       flushPassiveEffects();

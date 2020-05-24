@@ -1,3 +1,56 @@
+## 从Setstate看Fiber如何工作
+地址：react/src/ReactBaseClasses.js  
+
+reactClassComponent 中只声明了setState方法，但并没有具体实现，实现是依赖后面注入的updater来实现的:
+```js
+Component.prototype.setState = function(partialState, callback) {
+  this.updater.enqueueSetState(this, partialState, callback, 'setState');
+};
+```
+
+地址：react-reconciler/src/ReactFiberClassComponent.js  
+
+(schedule)调用链：scheduleWork -> renderRoot(ReactFiberWorkLoop.js) -> workloop -> performUnitOfWork -> beginWork(ReactFiberBeginWork.js) -> mountIndeterminateComponent -> adoptClassInstance -> classComponentUpdater  
+
+ReactFiberClassComponent基本涵盖了类组件的全部具体实现，生命周期，setState的具体实现，
+`updater`的注入是在根据react类组件示例生成fiber节点时注入的：
+```js
+function adoptClassInstance(workInProgress: Fiber, instance: any): void {
+  instance.updater = classComponentUpdater;
+  workInProgress.stateNode = instance;
+  // The instance needs access to the fiber so that it can schedule updates
+  setInstance(instance, workInProgress);
+}
+
+const classComponentUpdater = {
+  isMounted,
+  enqueueSetState(inst, payload, callback) {
+    const fiber = getInstance(inst);
+    const currentTime = requestCurrentTime();
+    const suspenseConfig = requestCurrentSuspenseConfig();
+    const expirationTime = computeExpirationForFiber(
+      currentTime,
+      fiber,
+      suspenseConfig,
+    );
+
+    const update = createUpdate(expirationTime, suspenseConfig);
+    update.payload = payload;
+
+    if (revertPassiveEffectsChange) {
+      flushPassiveEffects();
+    }
+    enqueueUpdate(fiber, update);
+    scheduleWork(fiber, expirationTime);
+  },
+  enqueueReplaceState(inst, payload, callback) {},
+  enqueueForceUpdate(inst, callback) {}
+}
+```
+
+
+
+## Fiber Diff
 react fiber 版本的 diff 算法是从ReactFiberBeginWork.js文件的reconcileChildren方法开始的；
 
 `reconcileChildren`只是个入口，用于分辨这个节点的更新是新增(mountChildFibers) 还是更新(reconcileChildFibers)

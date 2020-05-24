@@ -1266,6 +1266,7 @@ function mountIndeterminateComponent(
   // React DevTools reads this flag.
   workInProgress.effectTag |= PerformedWork;
 
+  // NOTE: 这是针对类组件的挂载
   if (
     typeof value === 'object' &&
     value !== null &&
@@ -1307,6 +1308,7 @@ function mountIndeterminateComponent(
       hasContext = false;
     }
 
+    // 记录状态初始值
     workInProgress.memoizedState =
       value.state !== null && value.state !== undefined ? value.state : null;
 
@@ -1319,7 +1321,7 @@ function mountIndeterminateComponent(
         props,
       );
     }
-
+    // 注入声明周期与setState实现
     adoptClassInstance(workInProgress, value);
     mountClassInstance(workInProgress, Component, props, renderExpirationTime);
     return finishClassComponent(
@@ -1331,6 +1333,7 @@ function mountIndeterminateComponent(
       renderExpirationTime,
     );
   } else {
+    // NOTE: 这是针对函数组件的挂载
     // Proceed under the assumption that this is a function component
     workInProgress.tag = FunctionComponent;
     if (__DEV__) {
